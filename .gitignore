@@ -224,3 +224,6 @@ __pycache__/
 *.pyc
 rygnal.db
 logs/*.jsonl
+demo_sandbox/
+logs/*.jsonl
+logs/*.jsonl
