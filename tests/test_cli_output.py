@@ -1,9 +1,9 @@
 from types import SimpleNamespace
 
-from demo.cli_output import render_outcome, render_run_report
+from demo.cli_output import render_outcome, render_run_report, runtime_mode_value
 
 
-def make_outcome():
+def make_outcome(runtime_metadata="enforce"):
     scenario = SimpleNamespace(
         name="secret-file-access",
         description="Agent attempts to read environment secrets.",
@@ -15,7 +15,6 @@ def make_outcome():
     )
 
     result = SimpleNamespace(
-        runtime_mode="enforce",
         risk_assessment={
             "risk_score": 95,
             "risk_level": "critical",
@@ -31,6 +30,7 @@ def make_outcome():
         ),
         audit_event=SimpleNamespace(
             event_id="evt_test_123",
+            metadata={"runtime_mode": runtime_metadata},
         ),
     )
 
@@ -50,6 +50,29 @@ def test_render_outcome_contains_core_security_fields():
     assert "Policy      : block-env-read" in output
     assert "Execution   : skipped" in output
     assert "Audit Event : evt_test_123" in output
+
+
+def test_runtime_mode_uses_audit_metadata_first():
+    outcome = make_outcome(runtime_metadata="simulate")
+
+    assert runtime_mode_value(outcome.result) == "simulate"
+
+
+def test_runtime_mode_falls_back_to_result_model():
+    result = SimpleNamespace(
+        runtime_mode="observe",
+        audit_event=SimpleNamespace(metadata={}),
+    )
+
+    assert runtime_mode_value(result) == "observe"
+
+
+def test_runtime_mode_defaults_to_enforce_when_missing():
+    result = SimpleNamespace(
+        audit_event=SimpleNamespace(metadata={}),
+    )
+
+    assert runtime_mode_value(result) == "enforce"
 
 
 def test_render_run_report_contains_summary():

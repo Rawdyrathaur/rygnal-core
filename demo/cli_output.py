@@ -43,7 +43,7 @@ def render_outcome(outcome: Any, index: int) -> list[str]:
 
     decision = enum_value(policy_decision.decision).upper()
     execution_status = enum_value(execution.status)
-    runtime_mode = enum_value(getattr(result, "runtime_mode", "unknown"))
+    runtime_mode = runtime_mode_value(result)
 
     risk_level = enum_value(risk.get("risk_level", "unknown"))
     risk_score = risk.get("risk_score", "n/a")
@@ -67,6 +67,25 @@ def render_outcome(outcome: Any, index: int) -> list[str]:
         f"   Reason      : {reason}",
         f"   Audit Event : {audit_event.event_id}",
     ]
+
+
+def runtime_mode_value(result: Any) -> str:
+    """Return runtime mode from audit metadata, result model, or safe default."""
+    audit_event = getattr(result, "audit_event", None)
+    metadata = getattr(audit_event, "metadata", {}) if audit_event else {}
+
+    if isinstance(metadata, dict):
+        value = metadata.get("runtime_mode")
+        if value:
+            return enum_value(value)
+
+    runtime_mode = getattr(result, "runtime_mode", None)
+    if runtime_mode is not None:
+        value = enum_value(runtime_mode)
+        if value and value != "unknown":
+            return value
+
+    return "enforce"
 
 
 def normalize_risk(risk_assessment: Any) -> dict[str, Any]:
