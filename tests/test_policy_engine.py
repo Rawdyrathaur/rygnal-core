@@ -174,3 +174,41 @@ def test_invalid_policy_file_mapping_raises_error(tmp_path: Path):
 
     with pytest.raises(ValueError, match="YAML mapping"):
         PolicyEngine.from_file(bad_policy)
+
+
+def test_policy_decision_includes_explain_output_for_matched_rule():
+    engine = load_default_policy_engine()
+
+    result = engine.evaluate(ToolRequest(tool_name="file_read", action="read_file", target=".env"))
+
+    assert result.explanation is not None
+    assert result.explanation.policy_version == "policy.v2"
+    assert result.explanation.matched is True
+    assert result.explanation.matched_rule_id == "block-env-read"
+    assert result.explanation.matched_rule_priority == 10
+    assert "tool_name" in result.explanation.matched_conditions
+    assert "target_contains" in result.explanation.matched_conditions
+    assert result.explanation.evaluated_rule_ids == ["block-env-read"]
+    assert result.explanation.default_decision is False
+
+
+def test_policy_decision_includes_explain_output_for_default_allow():
+    engine = load_default_policy_engine()
+
+    result = engine.evaluate(
+        ToolRequest(tool_name="file_read", action="read_file", target="README.md")
+    )
+
+    assert result.explanation is not None
+    assert result.explanation.policy_version == "policy.v2"
+    assert result.explanation.matched is False
+    assert result.explanation.matched_rule_id is None
+    assert result.explanation.matched_rule_priority is None
+    assert result.explanation.matched_conditions == []
+    assert result.explanation.evaluated_rule_ids == [
+        "block-env-read",
+        "block-dangerous-shell",
+        "approval-file-delete",
+        "simulate-external-api-send",
+    ]
+    assert result.explanation.default_decision is True

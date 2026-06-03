@@ -107,6 +107,18 @@ class PolicySchema(BaseModel):
     rules: list[PolicyRule] = Field(default_factory=list)
 
 
+class PolicyExplanation(BaseModel):
+    """Explain why a policy decision was produced."""
+
+    policy_version: str
+    matched: bool
+    matched_rule_id: str | None = None
+    matched_rule_priority: int | None = None
+    matched_conditions: list[str] = Field(default_factory=list)
+    evaluated_rule_ids: list[str] = Field(default_factory=list)
+    default_decision: bool = False
+
+
 class PolicyDecision(BaseModel):
     """Policy evaluation result."""
 
@@ -115,6 +127,7 @@ class PolicyDecision(BaseModel):
     severity: Severity
     reason: str
     policy_id: str | None = None
+    explanation: PolicyExplanation | None = None
 
 
 class ApprovalRequest(BaseModel):
