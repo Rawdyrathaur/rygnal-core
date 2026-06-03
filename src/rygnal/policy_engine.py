@@ -9,7 +9,15 @@ from typing import Any
 
 import yaml
 
-from rygnal.models import Decision, PolicyDecision, PolicyRule, PolicySchema, Severity, ToolRequest
+from rygnal.models import (
+    Decision,
+    PolicyDecision,
+    PolicyExplanation,
+    PolicyRule,
+    PolicySchema,
+    Severity,
+    ToolRequest,
+)
 
 
 class PolicyEngine:
@@ -51,8 +59,12 @@ class PolicyEngine:
         )
 
     def evaluate(self, request: ToolRequest) -> PolicyDecision:
-        """Return the first matching policy decision."""
+        """Return the first matching policy decision with explain output."""
+        evaluated_rule_ids: list[str] = []
+
         for rule in self.rules:
+            evaluated_rule_ids.append(rule.id)
+
             if self._matches(rule, request):
                 return PolicyDecision(
                     decision=rule.decision,
@@ -60,6 +72,15 @@ class PolicyEngine:
                     severity=rule.severity,
                     reason=rule.reason,
                     policy_id=rule.id,
+                    explanation=PolicyExplanation(
+                        policy_version=self.policy_version,
+                        matched=True,
+                        matched_rule_id=rule.id,
+                        matched_rule_priority=rule.priority,
+                        matched_conditions=self._matched_conditions(rule),
+                        evaluated_rule_ids=evaluated_rule_ids,
+                        default_decision=False,
+                    ),
                 )
 
         return PolicyDecision(
@@ -68,6 +89,15 @@ class PolicyEngine:
             severity=Severity.LOW,
             reason="No matching policy rule. Default allow.",
             policy_id=None,
+            explanation=PolicyExplanation(
+                policy_version=self.policy_version,
+                matched=False,
+                matched_rule_id=None,
+                matched_rule_priority=None,
+                matched_conditions=[],
+                evaluated_rule_ids=evaluated_rule_ids,
+                default_decision=True,
+            ),
         )
 
     def _matches(self, rule: PolicyRule, request: ToolRequest) -> bool:
@@ -87,6 +117,28 @@ class PolicyEngine:
             return False
 
         return True
+
+    @staticmethod
+    def _matched_conditions(rule: PolicyRule) -> list[str]:
+        """Return the configured match conditions for a rule."""
+        conditions: list[str] = []
+
+        if rule.tool_name:
+            conditions.append("tool_name")
+
+        if rule.action:
+            conditions.append("action")
+
+        if rule.environment:
+            conditions.append("environment")
+
+        if rule.target_contains:
+            conditions.append("target_contains")
+
+        if rule.input_contains:
+            conditions.append("input_contains")
+
+        return conditions
 
     @staticmethod
     def _is_allowed(decision: Decision) -> bool:
