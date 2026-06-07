@@ -58,10 +58,15 @@ class PolicyEngine:
             policy_version=policy_schema.policy_version,
         )
 
-    def evaluate(self, request: ToolRequest) -> PolicyDecision:
+    def evaluate(
+        self,
+        request: ToolRequest,
+        risk_assessment: Any | None = None,
+    ) -> PolicyDecision:
         """Return the first matching policy decision with explain output."""
         evaluated_rule_ids: list[str] = []
         risk_context = self._risk_context(getattr(request, "risk_assessment", None))
+
 
         for rule in self.rules:
             evaluated_rule_ids.append(rule.id)
@@ -128,6 +133,7 @@ class PolicyEngine:
         if rule.input_contains and rule.input_contains not in self._stringify(request.input):
             return False
 
+
         if rule.metadata_equals and not self._metadata_equals(
             request.metadata,
             rule.metadata_equals,
@@ -139,7 +145,6 @@ class PolicyEngine:
             rule.metadata_contains,
         ):
             return False
-
         if rule.risk_level and rule.risk_level != risk_context.get("risk_level"):
             return False
 
@@ -147,7 +152,6 @@ class PolicyEngine:
             risk_score = risk_context.get("risk_score")
             if risk_score is None or risk_score < rule.risk_score_min:
                 return False
-
         return True
 
     @staticmethod
@@ -215,7 +219,6 @@ class PolicyEngine:
 
         if rule.input_contains:
             conditions.append("input_contains")
-
         if rule.metadata_equals:
             conditions.append("metadata_equals")
 
