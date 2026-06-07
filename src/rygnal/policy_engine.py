@@ -65,8 +65,7 @@ class PolicyEngine:
     ) -> PolicyDecision:
         """Return the first matching policy decision with explain output."""
         evaluated_rule_ids: list[str] = []
-        risk_context = self._risk_context(getattr(request, "risk_assessment", None))
-
+        risk_context = self._risk_context(risk_assessment)
 
         for rule in self.rules:
             evaluated_rule_ids.append(rule.id)
@@ -132,7 +131,6 @@ class PolicyEngine:
 
         if rule.input_contains and rule.input_contains not in self._stringify(request.input):
             return False
-
 
         if rule.metadata_equals and not self._metadata_equals(
             request.metadata,
