@@ -107,6 +107,7 @@ class PolicyRule(BaseModel):
     risk_level: str | None = None
     risk_score_min: float | None = None
 
+
 class PolicySchema(BaseModel):
     """Validated policy file schema."""
 
