@@ -46,21 +46,23 @@ class PolicyEngine:
         if not isinstance(data, dict):
             raise ValueError("Policy file must be a YAML mapping.")
 
-        raw_rules = data.get("rules", [])
-
-        if not isinstance(raw_rules, list):
-            raise ValueError("Policy file must contain a 'rules' list.")
-
-        policy_schema = PolicySchema(
-            policy_version=data.get("policy_version", "policy.v1"),
-            default_decision=data.get("default_decision", Decision.ALLOW),
-            rules=[PolicyRule(**rule) for rule in raw_rules],
-        )
+        policy_schema = PolicySchema(**data)
+        cls._validate_policy_schema(policy_schema)
         return cls(
             rules=policy_schema.rules,
             policy_version=policy_schema.policy_version,
             default_decision=policy_schema.default_decision,
         )
+
+    @staticmethod
+    def _validate_policy_schema(policy_schema: PolicySchema) -> None:
+        """Validate policy-level safety invariants before runtime evaluation."""
+        seen_rule_ids: set[str] = set()
+
+        for rule in policy_schema.rules:
+            if rule.id in seen_rule_ids:
+                raise ValueError(f"Duplicate policy rule id: {rule.id}")
+            seen_rule_ids.add(rule.id)
 
     def evaluate(
         self,

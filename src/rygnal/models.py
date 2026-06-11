@@ -109,10 +109,16 @@ class PolicyRule(BaseModel):
 
 
 class PolicySchema(BaseModel):
-    """Validated policy file schema."""
+    """Validated policy file schema.
+
+    Policy files must declare fallback behavior explicitly so Rygnal does not
+    rely on hidden policy defaults during rule no-match cases.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     policy_version: str = "policy.v1"
-    default_decision: Decision = Decision.ALLOW
+    default_decision: Decision
     rules: list[PolicyRule] = Field(default_factory=list)
 
 

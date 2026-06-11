@@ -112,6 +112,7 @@ def test_policy_rules_are_sorted_by_priority(tmp_path: Path):
     policy_file.write_text(
         """
 policy_version: policy.v2
+default_decision: allow
 rules:
   - id: low-priority-block
     priority: 50
@@ -148,6 +149,7 @@ def test_policy_engine_keeps_backward_compatibility_without_version(tmp_path: Pa
     policy_file = tmp_path / "legacy_policy.yaml"
     policy_file.write_text(
         """
+default_decision: allow
 rules:
   - id: legacy-block
     tool_name: file_read
@@ -212,3 +214,63 @@ def test_policy_decision_includes_explain_output_for_default_allow():
         "simulate-external-api-send",
     ]
     assert result.explanation.default_decision is True
+
+def test_policy_file_requires_explicit_default_decision(tmp_path: Path):
+    policy_file = tmp_path / "missing_default_decision.yaml"
+    policy_file.write_text(
+        """
+policy_version: policy.v2
+rules:
+  - id: block-env
+    tool_name: file_read
+    target_contains: .env
+    decision: block
+    severity: critical
+    reason: Env files are blocked.
+"""
+    )
+
+    with pytest.raises(ValueError):
+        PolicyEngine.from_file(policy_file)
+
+
+def test_policy_file_rejects_unknown_top_level_fields(tmp_path: Path):
+    policy_file = tmp_path / "unknown_top_level_field.yaml"
+    policy_file.write_text(
+        """
+policy_version: policy.v2
+default_decision: allow
+unknown_field: true
+rules: []
+"""
+    )
+
+    with pytest.raises(ValueError):
+        PolicyEngine.from_file(policy_file)
+
+
+def test_policy_file_rejects_duplicate_rule_ids(tmp_path: Path):
+    policy_file = tmp_path / "duplicate_rule_ids.yaml"
+    policy_file.write_text(
+        """
+policy_version: policy.v2
+default_decision: allow
+rules:
+  - id: duplicate-rule
+    tool_name: file_read
+    target_contains: .env
+    decision: block
+    severity: critical
+    reason: First rule.
+
+  - id: duplicate-rule
+    tool_name: shell_command
+    input_contains: rm -rf
+    decision: block
+    severity: critical
+    reason: Second rule.
+"""
+    )
+
+    with pytest.raises(ValueError, match="Duplicate policy rule id"):
+        PolicyEngine.from_file(policy_file)
