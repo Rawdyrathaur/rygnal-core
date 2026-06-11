@@ -1,4 +1,5 @@
 policy_version: policy.v2
+default_decision: allow
 rules:
   - id: require-approval-critical-risk
     priority: 10

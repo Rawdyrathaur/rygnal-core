@@ -9,6 +9,7 @@ def test_policy_rule_can_match_target_equals(tmp_path: Path):
     policy_file.write_text(
         """
 policy_version: policy.v2
+default_decision: allow
 rules:
   - id: block-exact-prod-env
     priority: 5
@@ -43,6 +44,7 @@ def test_policy_rule_can_match_input_equals(tmp_path: Path):
     policy_file.write_text(
         """
 policy_version: policy.v2
+default_decision: allow
 rules:
   - id: block-exact-dangerous-input
     priority: 5
@@ -76,6 +78,7 @@ def test_policy_rule_can_match_metadata_equals(tmp_path: Path):
     policy_file.write_text(
         """
 policy_version: policy.v2
+default_decision: allow
 rules:
   - id: approval-for-prod-agent
     priority: 5
@@ -111,6 +114,7 @@ def test_policy_rule_can_match_metadata_contains(tmp_path: Path):
     policy_file.write_text(
         """
 policy_version: policy.v2
+default_decision: allow
 rules:
   - id: simulate-untrusted-source
     priority: 5
@@ -143,6 +147,7 @@ def test_metadata_rule_does_not_match_when_metadata_is_missing(tmp_path: Path):
     policy_file.write_text(
         """
 policy_version: policy.v2
+default_decision: allow
 rules:
   - id: block-prod-agent
     priority: 5

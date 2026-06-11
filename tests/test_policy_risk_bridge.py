@@ -19,6 +19,7 @@ def test_policy_rule_can_match_risk_level(tmp_path: Path):
     policy_file.write_text(
         """
 policy_version: policy.v2
+default_decision: allow
 rules:
   - id: require-approval-for-critical-risk
     priority: 5
@@ -47,6 +48,7 @@ def test_policy_rule_can_match_risk_score_min(tmp_path: Path):
     policy_file.write_text(
         """
 policy_version: policy.v2
+default_decision: allow
 rules:
   - id: block-high-score-risk
     priority: 5
@@ -75,6 +77,7 @@ def test_risk_aware_rule_does_not_match_without_risk_assessment(tmp_path: Path):
     policy_file.write_text(
         """
 policy_version: policy.v2
+default_decision: allow
 rules:
   - id: block-critical-risk
     priority: 5
